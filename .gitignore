@@ -1,3 +1,5 @@
 venv/
 mlruns/
 .vscode/
+*.pyc
+**/__pycache__/
