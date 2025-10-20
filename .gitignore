@@ -3,3 +3,4 @@ mlruns/
 .vscode/
 *.pyc
 **/__pycache__/
+.env
