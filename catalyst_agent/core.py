@@ -6,9 +6,13 @@ including the Azure OpenAI chat model wrapper.
 """
 
 import os
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Type, Dict, Any
+from dotenv import load_dotenv
 from langchain_openai import AzureChatOpenAI
 from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage, AIMessage
+from langchain_core.runnables import Runnable
+from pydantic import BaseModel
+load_dotenv()
 
 
 class AzureLLM:
@@ -191,11 +195,120 @@ class AzureLLM:
             >>> chain = prompt | model | output_parser
         """
         return self.model
+    
+    def with_structured_output(
+        self,
+        schema: Union[Type[BaseModel], Dict[str, Any]],
+        **kwargs
+    ) -> Runnable:
+        """
+        Get a version of the model that returns structured output.
+        
+        This method returns a Runnable that will output objects matching the
+        provided schema instead of plain text. The schema can be a Pydantic
+        model or a JSON schema dictionary.
+        
+        Args:
+            schema: Either a Pydantic BaseModel class or a JSON schema dict
+                   that specifies the structure of the desired output.
+            **kwargs: Additional arguments passed to with_structured_output().
+            
+        Returns:
+            A Runnable that outputs structured data matching the schema.
+            
+        Example with Pydantic:
+            >>> from pydantic import BaseModel, Field
+            >>> 
+            >>> class Joke(BaseModel):
+            ...     setup: str = Field(description="The setup of the joke")
+            ...     punchline: str = Field(description="The punchline")
+            ...     rating: int = Field(description="Funny rating 1-10")
+            >>> 
+            >>> llm = AzureLLM()
+            >>> structured_llm = llm.with_structured_output(Joke)
+            >>> joke = structured_llm.invoke("Tell me a joke about cats")
+            >>> print(f"Setup: {joke.setup}")
+            >>> print(f"Punchline: {joke.punchline}")
+            
+        Example with TypedDict/JSON Schema:
+            >>> schema = {
+            ...     "type": "object",
+            ...     "properties": {
+            ...         "name": {"type": "string"},
+            ...         "age": {"type": "integer"}
+            ...     },
+            ...     "required": ["name", "age"]
+            ... }
+            >>> structured_llm = llm.with_structured_output(schema)
+            >>> result = structured_llm.invoke("John is 30 years old")
+            >>> print(result)  # {'name': 'John', 'age': 30}
+        """
+        return self.model.with_structured_output(schema, **kwargs)
+    
+    def extract(
+        self,
+        text: str,
+        schema: Type[BaseModel],
+        system_message: Optional[str] = None
+    ) -> BaseModel:
+        """
+        Convenience method to extract structured data from text.
+        
+        This wraps with_structured_output for quick data extraction tasks.
+        
+        Args:
+            text: The text to extract information from.
+            schema: A Pydantic model defining the structure to extract.
+            system_message: Optional instruction for the extraction.
+            
+        Returns:
+            An instance of the schema with extracted data.
+            
+        Example:
+            >>> from pydantic import BaseModel
+            >>> 
+            >>> class Person(BaseModel):
+            ...     name: str
+            ...     age: int
+            ...     occupation: str
+            >>> 
+            >>> llm = AzureLLM()
+            >>> person = llm.extract(
+            ...     "Alice is a 28 year old software engineer",
+            ...     Person
+            ... )
+            >>> print(f"{person.name} is {person.age} years old")
+        """
+        structured_model = self.with_structured_output(schema)
+        
+        messages = []
+        if system_message:
+            messages.append(SystemMessage(content=system_message))
+        messages.append(HumanMessage(content=text))
+        
+        return structured_model.invoke(messages)
 
 
 # Singleton instance for easy access throughout the project
-# This can be imported and used directly: from catalyst_agent.core import llm
-llm = AzureLLM()
+# Only initialize if credentials are available
+_llm_instance = None
+
+def get_llm() -> AzureLLM:
+    """
+    Get or create the singleton LLM instance.
+    
+    Returns:
+        The AzureLLM singleton instance.
+        
+    Example:
+        >>> from catalyst_agent.core import get_llm
+        >>> llm = get_llm()
+        >>> response = llm.chat("Hello!")
+    """
+    global _llm_instance
+    if _llm_instance is None:
+        _llm_instance = AzureLLM()
+    return _llm_instance
 
 
 # Convenience function for quick one-off calls
@@ -215,4 +328,4 @@ def ask_llm(question: str, system_prompt: Optional[str] = None) -> str:
         >>> answer = ask_llm("What is the capital of France?")
         >>> print(answer)
     """
-    return llm.chat(question, system_message=system_prompt)
+    return get_llm().chat(question, system_message=system_prompt)

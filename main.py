@@ -43,7 +43,7 @@ def run_agent():
     user_input = input("> ").strip()
     
     if not user_input:
-        user_input = "Build a web application with user authentication"
+        user_input = "We need an internal dashboard for monitoring employee performance across departments. The dashboard should pull data from our HR database and show KPIs like productivity, completed projects, and average feedback ratings. Managers should be able to filter results by team, department, and time period. It must update daily and display charts and tables. The dashboard should be web-based and integrated with our company’s SSO for authentication. Ideally, it should be ready within six weeks."
         print(f"Using demo requirement: {user_input}")
     
     # Run the agent
