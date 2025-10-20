@@ -5,7 +5,8 @@ Tools for the catalyst agent.
 from langchain_core.tools import tool
 from catalyst_agent.core import get_llm
 from catalyst_agent.output_structures import (
-	ParsedRequirements
+	ParsedRequirements,
+	EstimatedComplexity
 )
 from catalyst_agent import prompts as P
 
@@ -34,7 +35,7 @@ def parse_requirements(raw_text: str) -> ParsedRequirements:
 	return response
 
 @tool
-def estimate_complexity_tool(requirements: ParsedRequirements, raw_text: str) -> str:
+def estimate_complexity(requirements: ParsedRequirements, raw_text: str) -> str:
 	"""Estimate the complexity of the project based on parsed requirements.
 	
 	Args:
@@ -44,13 +45,20 @@ def estimate_complexity_tool(requirements: ParsedRequirements, raw_text: str) ->
 	Returns:
 		str: Estimated complexity level (e.g., "Low", "Medium", "High")
 	"""
-	llm = get_llm()
-	system_message = "You are an expert project manager. Based on the provided project requirements, estimate the overall complexity of the project as Low, Medium, or High."
-	user_message = f"The project has the following features: {', '.join([f.name for f in requirements.features])}. Consider also the constraints: {', '.join(requirements.constraints)}. Based on this information, provide an estimated complexity level."
-	final_msg = P.GENERAL_SYSTEM_AND_USER_PROMPT.format(
-		system_message=system_message,
-		user_message=user_message
-	)
+	llm = get_llm().with_structured_output(EstimatedComplexity)
+	complexities = []
+	for feature in requirements.features:
+		system_message = P.COMPLEXITY_ESTIMATION_SYSTEM_PROMPT
+		user_message = P.COMPLEXITY_ESTIMATION_PROMPT.format(
+			parsed_requirements=str(feature.model_dump_json(indent=2)),
+			raw_text=raw_text
+		)
+		final_msg = P.GENERAL_SYSTEM_AND_USER_PROMPT.format(
+			system_message=system_message,
+			user_message=user_message
+		)
 
-	response = llm.invoke(final_msg)
-	return response.strip()
+		response = llm.invoke(final_msg)
+		complexities.append(response)
+	return complexities
+

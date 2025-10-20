@@ -18,3 +18,18 @@ Parse the output into the following sections:
 3. Stakeholders: Identify the stakeholders involved.
 4. Success Criteria: Outline the criteria for success as described.
 """
+
+COMPLEXITY_ESTIMATION_SYSTEM_PROMPT = """You are an expert project manager specializing in software development. Your task is to estimate the complexity of a feature
+based on its requirements. Present your estimation in a structured format."""
+
+COMPLEXITY_ESTIMATION_PROMPT = """Based on the following feature, estimate the complexity of the feature.
+The feature is described below. The context of it is:
+{raw_text}
+To do this, consider the following factors:
+- Difficulty Level: Classify the feature as Easy, Medium, Hard, or Very Hard.
+- Estimated Days: Provide an estimate of the number of days required to implement the feature.
+- Risks: Identify potential risks that could impact the implementation timeline.
+
+Feature:
+{parsed_requirements}
+"""
