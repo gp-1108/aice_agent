@@ -6,7 +6,9 @@ from langchain_core.tools import tool
 from catalyst_agent.core import get_llm
 from catalyst_agent.output_structures import (
 	ParsedRequirements,
-	EstimatedComplexity
+	EstimatedComplexity,
+	Task,
+	Feature
 )
 from catalyst_agent import prompts as P
 
@@ -35,7 +37,7 @@ def parse_requirements(raw_text: str) -> ParsedRequirements:
 	return response
 
 @tool
-def estimate_complexity(requirements: ParsedRequirements, raw_text: str) -> str:
+def estimate_complexity(requirements: ParsedRequirements, raw_text: str) -> list[EstimatedComplexity]:
 	"""Estimate the complexity of the project based on parsed requirements.
 	
 	Args:
@@ -43,7 +45,7 @@ def estimate_complexity(requirements: ParsedRequirements, raw_text: str) -> str:
 		raw_text: Original raw requirement text
 		
 	Returns:
-		str: Estimated complexity level (e.g., "Low", "Medium", "High")
+		List of complexity estimations per feature
 	"""
 	llm = get_llm().with_structured_output(EstimatedComplexity)
 	complexities = []
@@ -61,4 +63,47 @@ def estimate_complexity(requirements: ParsedRequirements, raw_text: str) -> str:
 		response = llm.invoke(final_msg)
 		complexities.append(response)
 	return complexities
+
+@tool
+def generate_tasks(features: list[Feature], complexities: list[EstimatedComplexity]) -> list[list[Task]]:
+	"""Generate a list of tasks from parsed requirements.
+	Break a feature into granular tasks with short descriptions and an initial
+	guess at dependencies and priority
+	
+	Args:
+		features: List of parsed features
+		complexities: List of estimated complexities for each feature
+
+	Returns:
+		List of task lists (one list of tasks per feature)
+	"""
+	from catalyst_agent.output_structures import TaskNameList, TaskList
+	
+	tasks = []
+	
+	for feature, complexity in zip(features, complexities):
+		# First LLM call: Generate task names only
+		task_name_llm = get_llm().with_structured_output(TaskNameList)
+		message = P.TASK_GENERATION_PROMPT.format(
+			parsed_feature=str(feature.model_dump_json(indent=2)),
+			estimated_complexity=str(complexity.model_dump_json(indent=2))
+		)
+		task_names_response = task_name_llm.invoke(message)
+		
+		# Second LLM call: Generate all detailed tasks at once
+		task_detail_llm = get_llm().with_structured_output(TaskList)
+		system_message = P.TASK_DETAILED_SYSTEM_PROMPT
+		user_message = P.TASK_DETAILED_PROMPT.format(
+			feature_context=str(feature.model_dump_json(indent=2)),
+			all_task_titles="\n".join(f"- {title}" for title in task_names_response.tasks)
+		)
+		final_msg = P.GENERAL_SYSTEM_AND_USER_PROMPT.format(
+			system_message=system_message,
+			user_message=user_message
+		)
+		detailed_tasks_response = task_detail_llm.invoke(final_msg)
+		
+		tasks.append(detailed_tasks_response.tasks)
+	
+	return tasks
 

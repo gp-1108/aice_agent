@@ -5,7 +5,8 @@ State definition for the agent workflow.
 from typing import TypedDict
 from catalyst_agent.output_structures import (
 	ParsedRequirements,
-	EstimatedComplexity
+	EstimatedComplexity,
+	Task
 )
 
 
@@ -14,3 +15,4 @@ class AgentState(TypedDict):
 	raw_text: str
 	parsed_requirements: ParsedRequirements | None
 	estimated_complexities: list[EstimatedComplexity] | None
+	tasks: list[list[Task]] | None

@@ -33,3 +33,40 @@ To do this, consider the following factors:
 Feature:
 {parsed_requirements}
 """
+
+TASK_GENERATION_PROMPT = """Based on the following estimated complexities for features and descriptions, generate a list of specific task names required to implement the feature.
+For the feature, break it down into granular tasks with a meaningful title.
+
+The feature is:
+{parsed_feature}
+
+Its estimated complexity is:
+{estimated_complexity}
+
+You must generate a list of task names (just the titles) so that they can fully cover the implementation of the feature.
+Include all necessary tasks: setup, implementation, testing, and documentation."""
+
+TASK_DETAILED_SYSTEM_PROMPT = """You are an expert project manager specializing in software development. Your task is to take a list of task titles and provide detailed descriptions, dependencies, and priority levels for ALL tasks at once."""
+
+TASK_DETAILED_PROMPT = """Given the following list of task titles for a feature, provide detailed information for ALL tasks in a single structured output.
+
+Feature context:
+{feature_context}
+
+Task titles:
+{all_task_titles}
+
+For each task, provide:
+- Title: The exact title from the list above
+- Description: A detailed description of what needs to be done
+- Priority: Classify as Low, Medium, or High based on importance and blocking nature
+- Dependencies: List the titles of other tasks (from the list above) that must be completed before this task can start. Use empty list [] if no dependencies.
+
+Requirements:
+1. Provide details for ALL tasks in the list
+2. Ensure task titles exactly match those provided
+3. Set realistic priorities based on task criticality
+4. Identify dependencies accurately - only reference task titles from the provided list
+5. Dependencies should form a logical order of execution
+
+Generate the complete detailed task list now."""

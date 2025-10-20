@@ -22,3 +22,21 @@ class EstimatedComplexity(BaseModel):
 	difficulty: Difficulty
 	estimated_days: int
 	risks: list[str]
+
+class TaskNameList(BaseModel):
+	tasks: list[str]
+
+class TaskPriority(str, Enum):
+	LOW = "low"
+	MEDIUM = "medium"
+	HIGH = "high"
+
+class Task(BaseModel):
+	title: str
+	description: str
+	priority: TaskPriority
+	dependencies: list[str]
+
+class TaskList(BaseModel):
+	"""A list of tasks for a feature."""
+	tasks: list[Task]
