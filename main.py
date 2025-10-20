@@ -1,99 +1,236 @@
 """
-Catalyst Agent Main - Simple LangGraph with MLflow Autologging
-This demonstrates the minimal scaffolding with automatic MLflow tracing.
+Catalyst Agent Main - Interactive Demo
+
+This demonstrates the LangGraph agent with MLflow integration options:
+1. Run the agent normally with automatic tracing
+2. Log the agent as an MLflow model
+3. View/load previously logged models
 """
 
+import sys
 import mlflow
 from catalyst_agent.agent import create_agent
 
-# =====================================
-# 1. ENABLE MLFLOW AUTOLOGGING
-# =====================================
-# This single line enables automatic tracing for LangGraph
-mlflow.langchain.autolog()
 
-# Set experiment for organizing runs
-mlflow.set_experiment("catalyst-agent-demo")
+def print_menu():
+    """Display the main menu."""
+    print("\n" + "="*70)
+    print("CATALYST AGENT - Main Menu")
+    print("="*70)
+    print("\n1. Run Agent (with MLflow tracing)")
+    print("2. Log Agent to MLflow")
+    print("3. View/Load Logged Models")
+    print("4. Exit")
+    print("\n" + "="*70)
 
-print("✓ MLflow autologging enabled")
-experiment = mlflow.get_experiment_by_name('catalyst-agent-demo')
-print(f"✓ Experiment set to: {experiment.name if experiment else 'catalyst-agent-demo'}")
 
-# =====================================
-# 2. CREATE THE AGENT
-# =====================================
-agent = create_agent()
-print("✓ LangGraph agent created")
+def run_agent():
+    """Run the agent with a sample requirement (Option 1)."""
+    # Enable MLflow autologging for tracing
+    mlflow.langchain.autolog()
+    mlflow.set_experiment("catalyst-agent-demo")
+    
+    print("\n" + "="*70)
+    print("RUNNING AGENT WITH MLFLOW TRACING")
+    print("="*70)
+    
+    # Create the agent
+    agent = create_agent()
+    print("✓ LangGraph agent created")
+    
+    # Get requirement from user
+    print("\nEnter your requirement (or press Enter for demo):")
+    user_input = input("> ").strip()
+    
+    if not user_input:
+        user_input = "Build a web application with user authentication"
+        print(f"Using demo requirement: {user_input}")
+    
+    # Run the agent
+    input_data = {
+        "raw_requirement": user_input,
+        "parsed_data": None,
+        "final_plan": None
+    }
+    
+    print("\n" + "-"*70)
+    print("Processing...")
+    print("-"*70)
+    
+    result = agent.invoke(input_data)
+    
+    print("\n" + "="*70)
+    print("AGENT RESULT:")
+    print("="*70)
+    print(f"Input requirement: {result['raw_requirement']}")
+    print(f"Parsed data: {result['parsed_data']}")
+    print(f"Final plan: {result['final_plan']}")
+    
+    print("\n✓ Agent execution completed!")
+    print("  View traces in MLflow UI: mlflow ui (http://localhost:5000)")
 
-# =====================================
-# 3. INVOKE THE AGENT (BASIC)
-# =====================================
-# This invocation will be automatically traced by MLflow
-print("\n" + "="*50)
-print("INVOCATION 1 - Basic usage with autolog")
-print("="*50 + "\n")
 
-input_data = {
-    "raw_requirement": "Build a web application with user authentication",
-    "parsed_data": None,
-    "final_plan": None
-}
+def log_agent():
+    """Log the agent to MLflow (Option 2)."""
+    print("\n" + "="*70)
+    print("LOGGING AGENT TO MLFLOW")
+    print("="*70)
+    
+    try:
+        from mlflow_logging import log_agent_to_mlflow
+        
+        print("\nThis will log the agent using the 'Models From Code' approach...")
+        print("Continue? (y/n): ", end="")
+        confirm = input().strip().lower()
+        
+        if confirm != 'y':
+            print("Cancelled.")
+            return
+        
+        print("\nLogging agent...")
+        run_id, model_uri = log_agent_to_mlflow(verbose=True)
+        
+        print(f"\n{'='*70}")
+        print("SUCCESS!")
+        print(f"{'='*70}")
+        print(f"Run ID: {run_id}")
+        print(f"Model URI: {model_uri}")
+        print(f"\nTo verify: python -m mlflow_logging.verify_model_reload {run_id}")
+        
+    except ImportError:
+        print("\n❌ Error: mlflow_logging module not found")
+        print("Make sure mlflow_logging/ directory exists with required files")
+    except Exception as e:
+        print(f"\n❌ Error logging agent: {e}")
 
-result = agent.invoke(input_data)
 
-print("\n" + "="*50)
-print("AGENT RESULT:")
-print("="*50)
-print(f"Input requirement: {result['raw_requirement']}")
-print(f"Parsed data: {result['parsed_data']}")
-print(f"Final plan: {result['final_plan']}")
-print("\n")
+def view_models():
+    """View and optionally load logged models (Option 3)."""
+    print("\n" + "="*70)
+    print("VIEW/LOAD LOGGED MODELS")
+    print("="*70)
+    
+    try:
+        # Get all experiments
+        experiments = mlflow.search_experiments()
+        
+        # Find relevant experiment
+        target_exp = None
+        for exp in experiments:
+            if "catalyst-agent" in exp.name:
+                target_exp = exp
+                break
+        
+        if not target_exp:
+            print("\n⚠️  No catalyst-agent experiments found")
+            print("Run option 2 to log the agent first")
+            return
+        
+        print(f"\nExperiment: {target_exp.name}")
+        print(f"Experiment ID: {target_exp.experiment_id}")
+        
+        # Get runs from this experiment
+        runs = mlflow.search_runs(
+            experiment_ids=[target_exp.experiment_id],
+            order_by=["start_time DESC"],
+            max_results=10
+        )
+        
+        if runs.empty:
+            print("\n⚠️  No runs found in this experiment")
+            return
+        
+        print(f"\nFound {len(runs)} recent run(s):\n")
+        
+        for idx, run in runs.iterrows():
+            run_id = run['run_id']
+            start_time = run['start_time']
+            status = run['status']
+            print(f"{idx + 1}. Run ID: {run_id}")
+            print(f"   Status: {status}")
+            print(f"   Started: {start_time}")
+            print()
+        
+        print("Options:")
+        print("1. Load a specific model by run ID")
+        print("2. Open MLflow UI")
+        print("3. Back to main menu")
+        
+        choice = input("\nSelect (1-3): ").strip()
+        
+        if choice == "1":
+            run_id = input("Enter run ID: ").strip()
+            load_and_test_model(run_id)
+        elif choice == "2":
+            print("\nTo open MLflow UI, run in a terminal:")
+            print("  mlflow ui")
+            print("\nThen navigate to: http://localhost:5000")
+        
+    except Exception as e:
+        print(f"\n❌ Error: {e}")
 
-# =====================================
-# 4. INVOKE THE AGENT (WITH DIFFERENT INPUT)
-# =====================================
-print("="*50)
-print("INVOCATION 2 - Different requirement")
-print("="*50 + "\n")
 
-input_data2 = {
-    "raw_requirement": "Create a REST API with authentication and database integration",
-    "parsed_data": None,
-    "final_plan": None
-}
+def load_and_test_model(run_id):
+    """Load and test a specific model."""
+    print(f"\n{'='*70}")
+    print(f"LOADING MODEL: {run_id}")
+    print(f"{'='*70}")
+    
+    try:
+        model_uri = f"runs:/{run_id}/catalyst-agent"
+        print(f"\nLoading from: {model_uri}")
+        
+        agent = mlflow.langchain.load_model(model_uri)
+        print(f"✓ Model loaded: {type(agent).__name__}")
+        
+        print("\nTest the model? (y/n): ", end="")
+        if input().strip().lower() == 'y':
+            test_input = input("\nEnter requirement (or press Enter for demo): ").strip()
+            if not test_input:
+                test_input = "Create a REST API with authentication"
+            
+            result = agent.invoke({
+                "raw_requirement": test_input,
+                "parsed_data": None,
+                "final_plan": None
+            })
+            
+            print("\n" + "-"*70)
+            print("RESULT:")
+            print("-"*70)
+            print(f"Input: {result['raw_requirement']}")
+            print(f"Parsed: {result['parsed_data']}")
+            print(f"Plan: {result['final_plan']}")
+            print("\n✓ Inference successful!")
+            
+    except Exception as e:
+        print(f"\n❌ Error: {e}")
 
-result2 = agent.invoke(input_data2)
 
-print("\n" + "="*50)
-print("AGENT RESULT:")
-print("="*50)
-print(f"Input requirement: {result2['raw_requirement']}")
-print(f"Parsed data: {result2['parsed_data']}")
-print(f"Final plan: {result2['final_plan']}")
+def main():
+    """Main entry point with menu system."""
+    print("\n" + "="*70)
+    print("CATALYST AGENT - LangGraph with MLflow")
+    print("="*70)
+    
+    while True:
+        print_menu()
+        choice = input("Select an option (1-4): ").strip()
+        
+        if choice == "1":
+            run_agent()
+        elif choice == "2":
+            log_agent()
+        elif choice == "3":
+            view_models()
+        elif choice == "4":
+            print("\nExiting... Goodbye! 👋")
+            sys.exit(0)
+        else:
+            print("\n❌ Invalid choice. Please select 1-4.")
+        
+        input("\nPress Enter to continue...")
 
-# =====================================
-# 5. VIEW TRACES
-# =====================================
-print("\n" + "="*50)
-print("VIEWING TRACES")
-print("="*50)
-print("""
-To view the traces:
 
-1. Run MLflow UI:
-   - Command: mlflow ui
-   - Open: http://localhost:5000
-   - Navigate to the "catalyst-agent-demo" experiment
-   - Click on any run to see the trace visualization
-
-2. The traces will show:
-   - Agent workflow execution (START -> parse -> END)
-   - Tool calls (parse_requirements)
-   - Input/output for each step
-   - Execution time for each component
-
-Each invocation creates a separate trace that you can inspect.
-""")
-
-print("\n✓ Demo completed successfully!")
-print("✓ Check MLflow UI to view detailed traces of both agent invocations")
+if __name__ == "__main__":
+    main()
