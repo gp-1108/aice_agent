@@ -9,7 +9,49 @@ This demonstrates the LangGraph agent with MLflow integration options:
 
 import sys
 import mlflow
+import json
+from datetime import datetime
+from pathlib import Path
 from catalyst_agent.agent import create_agent
+
+
+def save_result_to_json(result: dict, run_id: str) -> str:
+	"""Save the agent result to a JSON file.
+	
+	Args:
+		result: The agent's final state dictionary
+		run_id: MLflow run ID for filename
+		
+	Returns:
+		Path to the saved JSON file
+	"""
+	# Create output directory if it doesn't exist
+	output_dir = Path("agent_outputs")
+	output_dir.mkdir(exist_ok=True)
+	
+	# Create filename with timestamp
+	timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+	filename = f"agent_result_{timestamp}_{run_id[:8]}.json"
+	filepath = output_dir / filename
+	
+	# Convert result to JSON-serializable format
+	json_result = {
+		"run_id": run_id,
+		"timestamp": timestamp,
+		"raw_text": result.get("raw_text", ""),
+		"parsed_requirements": result.get("parsed_requirements").model_dump() if result.get("parsed_requirements") else None,
+		"estimated_complexities": [c.model_dump() for c in result.get("estimated_complexities", [])],
+		"tasks": [[task.model_dump() for task in task_list] for task_list in result.get("tasks", [])],
+		"acceptance_criteria": [ac.model_dump() for ac in result.get("acceptance_criteria", [])],
+		"copilot_prompts": [cp.model_dump() for cp in result.get("copilot_prompts", [])]
+	}
+	
+	# Save to file
+	with open(filepath, 'w', encoding='utf-8') as f:
+		json.dump(json_result, f, indent=2, ensure_ascii=False)
+	
+	print(f"✓ Results saved to: {filepath}")
+	return str(filepath)
 
 
 def print_menu():
@@ -26,48 +68,85 @@ def print_menu():
 
 def run_agent():
 	"""Run the agent with a sample requirement (Option 1)."""
-	# Enable MLflow autologging for tracing
-	mlflow.langchain.autolog()
-	mlflow.set_experiment("catalyst-agent-demo")
-	
 	print("\n" + "="*70)
 	print("RUNNING AGENT WITH MLFLOW TRACING")
 	print("="*70)
 	
+	# Enable MLflow autologging for tracing
+	print("\n[Step 1] Enabling MLflow autologging for LangChain...")
+	mlflow.langchain.autolog(
+		log_traces=True,  # Enable trace logging
+		silent=False      # Show MLflow logs
+	)
+	print("✓ Autologging enabled")
+	
+	# Set experiment
+	experiment_name = "catalyst-agent-demo"
+	print(f"\n[Step 2] Setting MLflow experiment: {experiment_name}")
+	mlflow.set_experiment(experiment_name)
+	experiment = mlflow.get_experiment_by_name(experiment_name)
+	print(f"✓ Experiment ID: {experiment.experiment_id}")
+	
 	# Create the agent
+	print("\n[Step 3] Creating LangGraph agent...")
 	agent = create_agent()
-	print("✓ LangGraph agent created")
+	print(f"✓ Agent created: {type(agent).__name__}")
 	
 	# Get requirement from user
-	print("\nEnter your requirement (or press Enter for demo):")
+	print("\n[Step 4] Getting user input...")
+	print("Enter your requirement (or press Enter for demo):")
 	user_input = input("> ").strip()
 	
 	if not user_input:
-		user_input = "We need an internal dashboard for monitoring employee performance across departments. The dashboard should pull data from our HR database and show KPIs like productivity, completed projects, and average feedback ratings. Managers should be able to filter results by team, department, and time period. It must update daily and display charts and tables. The dashboard should be web-based and integrated with our company’s SSO for authentication. Ideally, it should be ready within six weeks."
-		print(f"Using demo requirement: {user_input}")
+		user_input = "We need an internal dashboard for monitoring employee performance across departments. The dashboard should pull data from our HR database and show KPIs like productivity, completed projects, and average feedback ratings. Managers should be able to filter results by team, department, and time period. It must update daily and display charts and tables. The dashboard should be web-based and integrated with our company's SSO for authentication. Ideally, it should be ready within six weeks."
+		print(f"Using demo requirement")
 	
-	# Run the agent
+	# Prepare input data
 	input_data = {
-		"raw_requirement": user_input,
-		"parsed_data": None,
-		"final_plan": None
+		"raw_text": user_input,
+		"parsed_requirements": None,
+		"estimated_complexities": None,
+		"tasks": None,
+		"acceptance_criteria": None,
+		"copilot_prompts": None
 	}
 	
-	print("\n" + "-"*70)
-	print("Processing...")
-	print("-"*70)
-	
-	result = agent.invoke(input_data)
-	
 	print("\n" + "="*70)
-	print("AGENT RESULT:")
+	print("[Step 5] Running agent with MLflow tracking...")
 	print("="*70)
-	print(f"Input requirement: {result['raw_requirement']}")
-	print(f"Parsed data: {result['parsed_data']}")
-	print(f"Final plan: {result['final_plan']}")
 	
-	print("\n✓ Agent execution completed!")
-	print("  View traces in MLflow UI: mlflow ui (http://localhost:5000)")
+	# Run the agent within an MLflow run context
+	with mlflow.start_run(run_name="catalyst-agent-execution") as run:
+		run_id = run.info.run_id
+		print(f"✓ Started MLflow run: {run_id}")
+		
+		print("\nProcessing requirement...")
+		result = agent.invoke(input_data)
+		
+		print("\n" + "="*70)
+		print("AGENT FINAL STATE:")
+		print("="*70)
+		# Print the final state summary
+		print(f"raw_text: {result.get('raw_text', '')[:100]}...")
+		print(f"parsed_requirements: {len(result.get('parsed_requirements', {}).features if result.get('parsed_requirements') else [])} features")
+		print(f"estimated_complexities: {len(result.get('estimated_complexities', []))} complexities")
+		print(f"tasks: {sum(len(task_list) for task_list in result.get('tasks', []))} total tasks")
+		print(f"acceptance_criteria: {len(result.get('acceptance_criteria', []))} feature criteria")
+		print(f"copilot_prompts: {sum(len(cp.task_prompts) for cp in result.get('copilot_prompts', []))} prompts generated")
+		
+		# Save to JSON
+		print("\n[Step 6] Saving results to JSON...")
+		save_result_to_json(result, run_id)
+		
+		print(f"\n✓ Agent execution completed!")
+		print(f"✓ MLflow Run ID: {run_id}")
+		print(f"\nTo view this run in MLflow UI:")
+		print(f"  1. Start MLflow UI: mlflow ui")
+		print(f"  2. Navigate to: http://localhost:5000")
+		print(f"  3. Look for experiment: catalyst-agent-demo")
+		print(f"  4. Find run: {run_id}")
+	
+	return result
 
 
 def log_agent():

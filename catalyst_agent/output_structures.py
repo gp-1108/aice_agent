@@ -68,3 +68,13 @@ class FeatureAcceptanceCriteria(BaseModel):
 	"""Acceptance criteria for all tasks in a feature."""
 	feature_name: str
 	tasks_criteria: list[TaskAcceptanceCriteria]
+
+class CopilotPrompt(BaseModel):
+	"""A concise prompt for GitHub Copilot or Claude for a specific task."""
+	task_title: str
+	prompt: str
+
+class FeatureCopilotPrompts(BaseModel):
+	"""Copilot prompts for all tasks in a feature."""
+	feature_name: str
+	task_prompts: list[CopilotPrompt]

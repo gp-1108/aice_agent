@@ -7,7 +7,8 @@ from catalyst_agent.output_structures import (
 	ParsedRequirements,
 	EstimatedComplexity,
 	Task,
-	FeatureAcceptanceCriteria
+	FeatureAcceptanceCriteria,
+	FeatureCopilotPrompts
 )
 
 
@@ -18,3 +19,4 @@ class AgentState(TypedDict):
 	estimated_complexities: list[EstimatedComplexity] | None
 	tasks: list[list[Task]] | None
 	acceptance_criteria: list[FeatureAcceptanceCriteria] | None
+	copilot_prompts: list[FeatureCopilotPrompts] | None

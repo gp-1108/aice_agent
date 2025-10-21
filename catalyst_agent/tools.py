@@ -9,7 +9,8 @@ from catalyst_agent.output_structures import (
 	EstimatedComplexity,
 	Task,
 	Feature,
-	FeatureAcceptanceCriteria
+	FeatureAcceptanceCriteria,
+	FeatureCopilotPrompts
 )
 from catalyst_agent import prompts as P
 
@@ -146,4 +147,66 @@ def create_acceptance_criteria(features: list[Feature], tasks: list[list[Task]])
 		acceptance_criteria_list.append(response)
 	
 	return acceptance_criteria_list
+
+@tool
+def generate_prompt_for_copilot(features: list[Feature], tasks: list[list[Task]], acceptance_criteria: list[FeatureAcceptanceCriteria]) -> list[FeatureCopilotPrompts]:
+	"""Generate concise, high-signal prompts for GitHub Copilot or Claude.
+	
+	Turn tasks and their acceptance criteria into actionable prompts suitable
+	for AI coding assistants.
+	
+	Args:
+		features: List of parsed features
+		tasks: List of task lists (one list per feature)
+		acceptance_criteria: List of acceptance criteria for each feature's tasks
+		
+	Returns:
+		List of Copilot prompts for each feature's tasks
+	"""
+	llm = get_llm().with_structured_output(FeatureCopilotPrompts)
+	copilot_prompts_list = []
+	
+	for feature, feature_tasks, feature_ac in zip(features, tasks, acceptance_criteria):
+		# Format tasks with their acceptance criteria
+		tasks_with_criteria = []
+		for task in feature_tasks:
+			# Find matching acceptance criteria for this task
+			task_ac = None
+			for tc in feature_ac.tasks_criteria:
+				if tc.task_title == task.title:
+					task_ac = tc
+					break
+			
+			# Format task with acceptance criteria
+			task_str = f"\nTask: {task.title}\n"
+			task_str += f"Description: {task.description}\n"
+			
+			if task_ac:
+				task_str += "Acceptance Criteria:\n"
+				for i, criterion in enumerate(task_ac.acceptance_criteria, 1):
+					task_str += f"  {i}. GIVEN {criterion.given}\n"
+					task_str += f"     WHEN {criterion.when}\n"
+					task_str += f"     THEN {criterion.then}\n"
+				
+				if task_ac.unit_tests:
+					task_str += f"Unit Tests: {len(task_ac.unit_tests)} tests\n"
+				if task_ac.integration_tests:
+					task_str += f"Integration Tests: {len(task_ac.integration_tests)} tests\n"
+			
+			tasks_with_criteria.append(task_str)
+		
+		system_message = P.COPILOT_PROMPT_SYSTEM_PROMPT
+		user_message = P.COPILOT_PROMPT_GENERATION.format(
+			feature_context=str(feature.model_dump_json(indent=2)),
+			tasks_with_criteria="\n".join(tasks_with_criteria)
+		)
+		final_msg = P.GENERAL_SYSTEM_AND_USER_PROMPT.format(
+			system_message=system_message,
+			user_message=user_message
+		)
+		
+		response = llm.invoke(final_msg)
+		copilot_prompts_list.append(response)
+	
+	return copilot_prompts_list
 

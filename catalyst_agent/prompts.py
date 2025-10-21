@@ -108,3 +108,45 @@ Requirements:
 7. Ensure task_title exactly matches the task title from the list above
 
 Generate acceptance criteria and tests for ALL tasks now."""
+
+COPILOT_PROMPT_SYSTEM_PROMPT = """You are an expert prompt engineer specializing in creating concise, high-signal prompts for AI coding assistants like GitHub Copilot and Claude. Your task is to distill task requirements and acceptance criteria into clear, actionable prompts."""
+
+COPILOT_PROMPT_GENERATION = """Given a feature, its tasks, and their acceptance criteria, create concise, high-signal prompts suitable for GitHub Copilot or Claude for EACH task.
+
+Feature context:
+{feature_context}
+
+Tasks with acceptance criteria:
+{tasks_with_criteria}
+
+For EACH task, create a prompt that:
+
+1. Starts with a clear action verb (e.g., "Implement", "Create", "Build", "Add")
+2. Clearly states what needs to be built
+3. Includes key requirements from the task description
+4. Incorporates critical acceptance criteria (Given/When/Then)
+5. Mentions important test scenarios
+6. Is concise (2-4 sentences, max 150 words)
+7. Uses technical language appropriate for the context
+8. Focuses on WHAT to build and HOW to validate it
+
+Format guidelines:
+- Be direct and specific
+- Include success criteria inline
+- Mention edge cases if critical
+- Reference test requirements briefly
+- Avoid unnecessary fluff or explanations
+- Use concrete technical terms
+
+Example format:
+"Implement [functionality] that [does X]. It should handle [scenario 1] and [scenario 2]. 
+Ensure [acceptance criterion]. Include unit tests for [test scenarios]."
+
+Requirements:
+1. Generate ONE prompt per task
+2. Ensure task_title exactly matches the task title from the list
+3. Keep prompts focused and actionable
+4. Include only the most critical information
+5. Make prompts immediately usable by an AI coding assistant
+
+Generate Copilot prompts for ALL tasks now."""
