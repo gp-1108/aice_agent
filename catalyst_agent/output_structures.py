@@ -40,3 +40,31 @@ class Task(BaseModel):
 class TaskList(BaseModel):
 	"""A list of tasks for a feature."""
 	tasks: list[Task]
+
+class TestType(str, Enum):
+	UNIT = "unit"
+	INTEGRATION = "integration"
+
+class TestDescription(BaseModel):
+	"""Description of a test case."""
+	test_name: str
+	test_type: TestType
+	description: str
+
+class AcceptanceCriterion(BaseModel):
+	"""A single acceptance criterion in Given/When/Then format."""
+	given: str
+	when: str
+	then: str
+
+class TaskAcceptanceCriteria(BaseModel):
+	"""Acceptance criteria and tests for a single task."""
+	task_title: str
+	acceptance_criteria: list[AcceptanceCriterion]
+	unit_tests: list[TestDescription]
+	integration_tests: list[TestDescription]
+
+class FeatureAcceptanceCriteria(BaseModel):
+	"""Acceptance criteria for all tasks in a feature."""
+	feature_name: str
+	tasks_criteria: list[TaskAcceptanceCriteria]

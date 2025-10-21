@@ -70,3 +70,41 @@ Requirements:
 5. Dependencies should form a logical order of execution
 
 Generate the complete detailed task list now."""
+
+ACCEPTANCE_CRITERIA_SYSTEM_PROMPT = """You are an expert QA engineer and test architect specializing in software development. Your task is to create clear, testable acceptance criteria and comprehensive test descriptions for software tasks."""
+
+ACCEPTANCE_CRITERIA_PROMPT = """Given a feature and its associated tasks, create acceptance criteria and test descriptions for each task.
+
+Feature context:
+{feature_context}
+
+Tasks:
+{tasks_list}
+
+For EACH task, provide:
+
+1. Acceptance Criteria (multiple criteria in Given/When/Then format):
+   - Given: The initial context or precondition
+   - When: The action or event that occurs
+   - Then: The expected outcome or result
+   
+2. Unit Tests: Descriptions of unit tests needed
+   - test_name: A descriptive name for the test
+   - test_type: "unit"
+   - description: What the test validates
+   
+3. Integration Tests: Descriptions of integration tests (if relevant for the task)
+   - test_name: A descriptive name for the test
+   - test_type: "integration"
+   - description: What the test validates across components
+
+Requirements:
+1. Create 2-4 acceptance criteria per task in Given/When/Then format
+2. Be specific and testable - avoid vague criteria
+3. Include relevant unit tests for each task (at least 2-5 per task)
+4. Include integration tests only when the task involves multiple components or external systems
+5. Ensure test names are descriptive and follow naming conventions
+6. Cover positive cases, negative cases, and edge cases
+7. Ensure task_title exactly matches the task title from the list above
+
+Generate acceptance criteria and tests for ALL tasks now."""

@@ -8,7 +8,8 @@ from catalyst_agent.output_structures import (
 	ParsedRequirements,
 	EstimatedComplexity,
 	Task,
-	Feature
+	Feature,
+	FeatureAcceptanceCriteria
 )
 from catalyst_agent import prompts as P
 
@@ -106,4 +107,43 @@ def generate_tasks(features: list[Feature], complexities: list[EstimatedComplexi
 		tasks.append(detailed_tasks_response.tasks)
 	
 	return tasks
+
+@tool
+def create_acceptance_criteria(features: list[Feature], tasks: list[list[Task]]) -> list[FeatureAcceptanceCriteria]:
+	"""Create acceptance criteria and test descriptions for all tasks.
+	
+	Generate clear, testable acceptance criteria using Given/When/Then format
+	along with comprehensive unit and integration test descriptions for each task.
+	
+	Args:
+		features: List of parsed features
+		tasks: List of task lists (one list per feature)
+		
+	Returns:
+		List of acceptance criteria for each feature's tasks
+	"""
+	llm = get_llm().with_structured_output(FeatureAcceptanceCriteria)
+	acceptance_criteria_list = []
+	
+	for feature, feature_tasks in zip(features, tasks):
+		# Format tasks for the prompt
+		tasks_formatted = "\n".join([
+			f"- {task.title}: {task.description}"
+			for task in feature_tasks
+		])
+		
+		system_message = P.ACCEPTANCE_CRITERIA_SYSTEM_PROMPT
+		user_message = P.ACCEPTANCE_CRITERIA_PROMPT.format(
+			feature_context=str(feature.model_dump_json(indent=2)),
+			tasks_list=tasks_formatted
+		)
+		final_msg = P.GENERAL_SYSTEM_AND_USER_PROMPT.format(
+			system_message=system_message,
+			user_message=user_message
+		)
+		
+		response = llm.invoke(final_msg)
+		acceptance_criteria_list.append(response)
+	
+	return acceptance_criteria_list
 
