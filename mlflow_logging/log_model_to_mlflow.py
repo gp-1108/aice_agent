@@ -210,11 +210,10 @@ def log_agent_to_mlflow(verbose=True):
 			print(f"✓ Started run: {run_id}")
 		
 		# Log the agent as a LangChain model FROM CODE
-		# The key difference: we pass the path to the Python file, not the object
 		log_kwargs = {
-			"lc_model": str(agent_model_path),  # Pass file path, not the object!
+			"lc_model": str(agent_model_path),
 			"name": MODEL_NAME,
-			"input_example": sample_inputs[0],  # Use first sample input
+			"input_example": sample_inputs[0],
 			"pip_requirements": [
 				"langchain==0.3.27",
 				"langchain-core==0.3.79",
