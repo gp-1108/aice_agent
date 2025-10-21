@@ -4,8 +4,7 @@ REQUIREMENTS_SYSTEM_PROMPT = """You are an expert requirements analyst. Your tas
 raw requirement texts and extract key features, constraints, stakeholders, and success criteria.
 Present the extracted information in a structured format."""
 
-REQUIREMENTS_PROMPT = """Analyze the following raw requirement text and extract the key features,
-constraints, stakeholders, and success criteria. Provide the information in a clear and structured manner.
+REQUIREMENTS_PROMPT = """Analyze the following raw requirement text and extract the key features, constraints, stakeholders, and success criteria. Provide the information in a clear and structured manner.
 Do not add any additional commentary or make assumptions beyond the provided text.
 
 The description of the project is the following:
@@ -17,15 +16,20 @@ Parse the output into the following sections:
 2. Constraints: List any constraints mentioned.
 3. Stakeholders: Identify the stakeholders involved.
 4. Success Criteria: Outline the criteria for success as described.
+
+Tailor the output based on the specific content of the requirements provided and the nature of the project.
 """
 
 COMPLEXITY_ESTIMATION_SYSTEM_PROMPT = """You are an expert project manager specializing in software development. Your task is to estimate the complexity of a feature
 based on its requirements. Present your estimation in a structured format."""
 
 COMPLEXITY_ESTIMATION_PROMPT = """Based on the following feature, estimate the complexity of the feature.
-The feature is described below. The context of it is:
+The feature is described below. The context ofthe feature is provided by the raw requirement text.
+
+Raw Requirement Text:
 {raw_text}
-To do this, consider the following factors:
+
+To estimate the complexity, consider the following factors:
 - Difficulty Level: Classify the feature as Easy, Medium, Hard, or Very Hard.
 - Estimated Days: Provide an estimate of the number of days required to implement the feature.
 - Risks: Identify potential risks that could impact the implementation timeline.
@@ -44,7 +48,10 @@ Its estimated complexity is:
 {estimated_complexity}
 
 You must generate a list of task names (just the titles) so that they can fully cover the implementation of the feature.
-Include all necessary tasks: setup, implementation, testing, and documentation."""
+Include all necessary tasks: setup, implementation, testing, and documentation.
+Do not omit any critical tasks but keep the list concise and focused on actionable items.
+Usually aim for 5-7 tasks per feature, use tasks sparingly if the feature is very simple.
+"""
 
 TASK_DETAILED_SYSTEM_PROMPT = """You are an expert project manager specializing in software development. Your task is to take a list of task titles and provide detailed descriptions, dependencies, and priority levels for ALL tasks at once."""
 
@@ -61,13 +68,15 @@ For each task, provide:
 - Description: A detailed description of what needs to be done
 - Priority: Classify as Low, Medium, or High based on importance and blocking nature
 - Dependencies: List the titles of other tasks (from the list above) that must be completed before this task can start. Use empty list [] if no dependencies.
+- Phase: Indicate the project phase this task belongs to: Foundation, Core_Features, or Integration.
 
 Requirements:
 1. Provide details for ALL tasks in the list
 2. Ensure task titles exactly match those provided
 3. Set realistic priorities based on task criticality
 4. Identify dependencies accurately - only reference task titles from the provided list
-5. Dependencies should form a logical order of execution
+5. Tasks should be granuarly defined and actionable
+6. Avoid vague descriptions; be specific about deliverables
 
 Generate the complete detailed task list now."""
 

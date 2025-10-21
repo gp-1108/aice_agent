@@ -31,11 +31,17 @@ class TaskPriority(str, Enum):
 	MEDIUM = "medium"
 	HIGH = "high"
 
+class ProjectPhase(str, Enum):
+	FOUNDATION = "foundation"
+	CORE_FEATURES = "core_features"
+	INTEGRATION = "integration"
+
 class Task(BaseModel):
 	title: str
 	description: str
 	priority: TaskPriority
 	dependencies: list[str]
+	phase: ProjectPhase
 
 class TaskList(BaseModel):
 	"""A list of tasks for a feature."""

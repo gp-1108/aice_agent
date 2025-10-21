@@ -65,25 +65,34 @@ def verify_model(run_id, verbose=True):
 		{
 			"description": "E-commerce platform",
 			"input": {
-				"raw_requirement": "Build an e-commerce platform with shopping cart and payment integration",
-				"parsed_data": None,
-				"final_plan": None
+				"raw_text": "Build an e-commerce platform with shopping cart and payment integration",
+				"parsed_requirements": None,
+				"estimated_complexities": None,
+				"tasks": None,
+				"acceptance_criteria": None,
+				"copilot_prompts": None
 			}
 		},
 		{
 			"description": "Data analytics dashboard",
 			"input": {
-				"raw_requirement": "Create a real-time analytics dashboard with data visualization",
-				"parsed_data": None,
-				"final_plan": None
+				"raw_text": "Create a real-time analytics dashboard with data visualization",
+				"parsed_requirements": None,
+				"estimated_complexities": None,
+				"tasks": None,
+				"acceptance_criteria": None,
+				"copilot_prompts": None
 			}
 		},
 		{
 			"description": "IoT monitoring system",
 			"input": {
-				"raw_requirement": "Develop an IoT device monitoring system with alerts and reporting",
-				"parsed_data": None,
-				"final_plan": None
+				"raw_text": "Develop an IoT device monitoring system with alerts and reporting",
+				"parsed_requirements": None,
+				"estimated_complexities": None,
+				"tasks": None,
+				"acceptance_criteria": None,
+				"copilot_prompts": None
 			}
 		}
 	]
@@ -96,14 +105,19 @@ def verify_model(run_id, verbose=True):
 		if verbose:
 			print(f"Test Case {i}: {test_case['description']}")
 			print("-" * 70)
-			print(f"Input: {test_case['input']['raw_requirement']}")
+			print(f"Input: {test_case['input']['raw_text']}")
 		
 		try:
 			result = loaded_agent.invoke(test_case['input'])
 			if verbose:
 				print(f"Output:")
-				print(f"  - Parsed data: {result['parsed_data']}")
-				print(f"  - Final plan: {result['final_plan']}")
+				num_features = len(result.get('parsed_requirements', {}).get('features', []))
+				num_tasks = len(result.get('tasks', []))
+				print(f"  - Parsed requirements: {num_features} features")
+				print(f"  - Estimated complexities: {len(result.get('estimated_complexities', []))} items")
+				print(f"  - Tasks: {num_tasks} task groups")
+				print(f"  - Acceptance criteria: {len(result.get('acceptance_criteria', []))} criteria groups")
+				print(f"  - Copilot prompts: {len(result.get('copilot_prompts', []))} prompt groups")
 				print(f"✓ Test case {i} passed\n")
 			
 		except Exception as e:

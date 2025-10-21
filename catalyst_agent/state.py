@@ -20,3 +20,4 @@ class AgentState(TypedDict):
 	tasks: list[list[Task]] | None
 	acceptance_criteria: list[FeatureAcceptanceCriteria] | None
 	copilot_prompts: list[FeatureCopilotPrompts] | None
+	final_json: str | None

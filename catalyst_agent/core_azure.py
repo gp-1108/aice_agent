@@ -2,13 +2,13 @@
 Core utilities for the Catalyst Agent.
 
 This module provides shared resources and utilities used across the agent,
-including the OpenAI chat model wrapper.
+including the Azure OpenAI chat model wrapper.
 """
 
 import os
 from typing import List, Optional, Union, Type, Dict, Any
 from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
+from langchain_openai import AzureChatOpenAI
 from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage, AIMessage
 from langchain_core.runnables import Runnable
 from pydantic import BaseModel
@@ -17,9 +17,9 @@ load_dotenv()
 
 class AzureLLM:
 	"""
-	Wrapper class for OpenAI chat model.
+	Wrapper class for Azure OpenAI chat model.
 	
-	This class provides a convenient interface to interact with OpenAI,
+	This class provides a convenient interface to interact with Azure OpenAI,
 	handling configuration and providing simple methods for common operations.
 	
 	Example:
@@ -54,22 +54,29 @@ class AzureLLM:
 		Initialize the Catalyst LLM wrapper.
 		
 		Args:
-			endpoint: Not used (kept for compatibility).
-			deployment: Not used (kept for compatibility).
-			api_key: OpenAI API key. Defaults to environment variable 
-					OPENAI_API_KEY.
-			api_version: Not used (kept for compatibility).
+			endpoint: Azure OpenAI endpoint URL. Defaults to environment variable 
+					 AZURE_OPENAI_ENDPOINT or class default.
+			deployment: Azure deployment name. Defaults to environment variable 
+					   AZURE_OPENAI_DEPLOYMENT or class default.
+			api_key: Azure API key. Defaults to environment variable 
+					AZURE_OPENAI_API_KEY or class default.
+			api_version: Azure API version. Defaults to class default.
 			temperature: Sampling temperature (0-1). Default is 0.7.
-			**kwargs: Additional arguments passed to ChatOpenAI.
+			**kwargs: Additional arguments passed to AzureChatOpenAI.
 		"""
-		self.api_key = api_key or os.getenv("OPENAI_API_KEY", "")
+		self.endpoint = endpoint or os.getenv("AZURE_OPENAI_ENDPOINT", "")
+		self.deployment = deployment or os.getenv("AZURE_OPENAI_DEPLOYMENT", "")
+		self.api_key = api_key or os.getenv("AZURE_OPENAI_API_KEY", "")
+		self.api_version = api_version or os.getenv("AZURE_OPENAI_API_VERSION", "")
 		self.temperature = temperature
-
-		# Initialize the OpenAI Chat model with gpt-5-mini
-		# Note: gpt-5-mini only supports temperature=1 (default)
-		self.model = ChatOpenAI(
-			model="gpt-5-mini",
+		
+		# Initialize the Azure Chat model
+		self.model = AzureChatOpenAI(
+			azure_endpoint=self.endpoint,
+			azure_deployment=self.deployment,
+			api_version=self.api_version,
 			api_key=self.api_key,
+			temperature=temperature,
 			**kwargs
 		)
 	
@@ -172,14 +179,14 @@ class AzureLLM:
 		"""
 		return self.chat(user_message, **kwargs)
 	
-	def get_model(self) -> ChatOpenAI:
+	def get_model(self) -> AzureChatOpenAI:
 		"""
-		Get the underlying ChatOpenAI model instance.
+		Get the underlying AzureChatOpenAI model instance.
 		
 		Useful when you need to pass the model to LangChain chains or agents.
 		
 		Returns:
-			The ChatOpenAI instance.
+			The AzureChatOpenAI instance.
 			
 		Example:
 			>>> llm = AzureLLM()
