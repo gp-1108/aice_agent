@@ -1,0 +1,37 @@
+artifact_path: file:///home/gp1108/Code/aice_agent/mlruns/861272485350255782/models/m-95808dfb664741afb0776bff1a06f4f3/artifacts
+flavors:
+  langchain:
+    code: null
+    langchain_version: 0.3.27
+    streamable: true
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.langchain
+    model_code_path: /home/gp1108/Code/aice_agent/mlflow_logging/agent_model.py
+    predict_stream_fn: predict_stream
+    python_version: 3.12.3
+    streamable: true
+is_signature_from_type_hint: false
+mlflow_version: 3.5.0
+model_id: m-95808dfb664741afb0776bff1a06f4f3
+model_size_bytes: 1070
+model_uuid: m-95808dfb664741afb0776bff1a06f4f3
+prompts: null
+run_id: 8575aa28c9f94a93bcca2684fc137873
+saved_input_example_info:
+  artifact_path: input_example.json
+  serving_input_path: serving_input_example.json
+  type: json_object
+signature:
+  inputs: '[{"type": "string", "name": "raw_text", "required": true}, {"type": "any",
+    "name": "parsed_requirements", "required": false}, {"type": "any", "name": "estimated_complexities",
+    "required": false}, {"type": "any", "name": "tasks", "required": false}, {"type":
+    "any", "name": "acceptance_criteria", "required": false}, {"type": "any", "name":
+    "copilot_prompts", "required": false}, {"type": "any", "name": "final_json", "required":
+    false}]'
+  outputs: '[{"type": "any", "required": true}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2025-10-21 21:59:38.032720'

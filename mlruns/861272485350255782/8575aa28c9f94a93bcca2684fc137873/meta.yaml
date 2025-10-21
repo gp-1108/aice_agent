@@ -1,0 +1,14 @@
+artifact_uri: file:///home/gp1108/Code/aice_agent/mlruns/861272485350255782/8575aa28c9f94a93bcca2684fc137873/artifacts
+end_time: 1761085317784
+entry_point_name: ''
+experiment_id: '861272485350255782'
+lifecycle_stage: active
+run_id: 8575aa28c9f94a93bcca2684fc137873
+run_name: log-catalyst-agent-from-code
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761083978013
+status: 3
+tags: []
+user_id: gp1108

@@ -1,0 +1,10 @@
+artifact_location: file:///home/gp1108/Code/aice_agent/mlruns/861272485350255782/models/m-95808dfb664741afb0776bff1a06f4f3/artifacts
+creation_timestamp: 1761083978026
+experiment_id: '861272485350255782'
+last_updated_timestamp: 1761085317774
+model_id: m-95808dfb664741afb0776bff1a06f4f3
+model_type: null
+name: catalyst-agent
+source_run_id: 8575aa28c9f94a93bcca2684fc137873
+status: 2
+status_message: null

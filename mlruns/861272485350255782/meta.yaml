@@ -1,0 +1,6 @@
+artifact_location: file:///home/gp1108/Code/aice_agent/mlruns/861272485350255782
+creation_time: 1761082643135
+experiment_id: '861272485350255782'
+last_update_time: 1761082643135
+lifecycle_stage: active
+name: catalyst-agent-model-logging

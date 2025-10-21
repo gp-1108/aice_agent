@@ -1,0 +1,11 @@
+{
+  "inputs": {
+    "raw_text": "Build a web application with user authentication and a dashboard",
+    "parsed_requirements": null,
+    "estimated_complexities": null,
+    "tasks": null,
+    "acceptance_criteria": null,
+    "copilot_prompts": null,
+    "final_json": null
+  }
+}
